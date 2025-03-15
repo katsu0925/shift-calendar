@@ -1,52 +1,95 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>シフト希望日カレンダー</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        #calendar { max-width: 600px; margin: 20px auto; }
-        #selected-dates { margin-top: 20px; font-size: 18px; }
-        button { margin-top: 10px; padding: 10px; font-size: 16px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>シフト希望日カレンダー</title>
+
+  <!-- FullCalendarのCSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.css" rel="stylesheet">
+  
+  <!-- jQuery（本コードでは必須ではありませんが、使用する場合に備えて読み込んでいます） -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- FullCalendarのJS本体 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.js"></script>
+  
+  <!-- 日本語化のためのロケールファイル -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/locales-all.min.js"></script>
+  
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    #calendar {
+      max-width: 600px;
+      margin: 20px auto;
+    }
+    #selected-dates {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 16px;
+    }
+  </style>
 </head>
 <body>
-    <h2>シフト希望日を選択</h2>
-    <div id="calendar"></div>
-    <div id="selected-dates">選択した日付: <span id="date-list"></span></div>
-    <button id="submit">送信</button>
+  <h2>シフト希望日を選択</h2>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            let selectedDates = [];
+  <!-- カレンダーを表示する要素 -->
+  <div id="calendar"></div>
+  
+  <!-- 選択した日付を表示する要素 -->
+  <div id="selected-dates">選択した日付: <span id="date-list"></span></div>
+  
+  <!-- データ送信用ボタン -->
+  <button id="submit">送信</button>
 
-            let calendarEl = document.getElementById('calendar');
-            let calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                locale: 'ja',
-                selectable: true,
-                dateClick: function (info) {
-                    let date = info.dateStr;
-                    if (selectedDates.includes(date)) {
-                        selectedDates = selectedDates.filter(d => d !== date);
-                    } else {
-                        selectedDates.push(date);
-                    }
-                    document.getElementById('date-list').innerText = selectedDates.join(', ');
-                }
-            });
+  <!-- カレンダーを初期化するスクリプト -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // 選択した日付を格納する配列
+      let selectedDates = [];
 
-            calendar.render();
+      // カレンダーを描画する要素を取得
+      let calendarEl = document.getElementById('calendar');
 
-            document.getElementById('submit').addEventListener('click', function () {
-                let queryString = selectedDates.join(',');
-                window.parent.postMessage(queryString, '*');
-            });
-        });
-    </script>
+      // FullCalendarのインスタンスを生成
+      let calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth', // 月間表示
+        locale: 'ja',                // 日本語化
+        selectable: true,           // 日付選択を有効にする
+        dateClick: function (info) {
+          let date = info.dateStr;
+          // すでに選択されている場合は解除、選択されていなければ追加
+          if (selectedDates.includes(date)) {
+            selectedDates = selectedDates.filter(d => d !== date);
+          } else {
+            selectedDates.push(date);
+          }
+          // 選択した日付を画面に表示
+          document.getElementById('date-list').innerText = selectedDates.join(', ');
+        }
+      });
+
+      // カレンダーを描画
+      calendar.render();
+
+      // 「送信」ボタンを押したときに選択日を送信
+      document.getElementById('submit').addEventListener('click', function () {
+        // 選択した日付をカンマ区切りの文字列にする
+        let queryString = selectedDates.join(',');
+
+        // 親フレーム（JotFormなど）にデータを送信
+        window.parent.postMessage(queryString, '*');
+      });
+    });
+  </script>
 </body>
 </html>

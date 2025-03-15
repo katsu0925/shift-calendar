@@ -7,16 +7,7 @@
 
   <!-- FullCalendarのCSS -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.css" rel="stylesheet">
-  
-  <!-- jQuery（本コードでは必須ではありませんが、使用する場合に備えて読み込んでいます） -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-  <!-- FullCalendarのJS本体 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.js"></script>
-  
-  <!-- 日本語化のためのロケールファイル -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/locales-all.min.js"></script>
-  
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -51,9 +42,20 @@
   <!-- データ送信用ボタン -->
   <button id="submit">送信</button>
 
-  <!-- カレンダーを初期化するスクリプト -->
+  <!-- FullCalendar関連スクリプトを <body> の直前に移動 -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/locales-all.min.js"></script>
+
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+      console.log("FullCalendar:", typeof FullCalendar); // デバッグ用
+
+      if (typeof FullCalendar === "undefined") {
+        console.error("FullCalendarが正しくロードされていません。CDNのURLを確認してください。");
+        return;
+      }
+
       // 選択した日付を格納する配列
       let selectedDates = [];
 

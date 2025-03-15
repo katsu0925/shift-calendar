@@ -1,315 +1,168 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>シフト希望日カレンダー</title>
+<!-- もしHTMLを直接書き込める場合の例 -->
 
-  <style>
-    /* 全体共通スタイル */
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-      text-align: center;
-    }
+<style>
+  .calendar-container {
+    max-width: 600px;
+    margin: 20px auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+  .calendar-header {
+    display: flex;
+    justify-content: space-between;
+    background-color: #f5f5f5;
+    padding: 10px;
+  }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+  .calendar-day-header,
+  .calendar-day {
+    border: 1px solid #eee;
+    padding: 8px 0;
+  }
+  .calendar-day.selected {
+    background-color: #e6f7ff;
+    color: #1890ff;
+    font-weight: bold;
+  }
+</style>
 
-    .calendar-container {
-      /* もともと max-width: 600px; だった部分を100%運用に */
-      width: 100%;
-      max-width: 100%; /* 幅を画面幅に合わせる */
-      margin: 10px auto;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      overflow: hidden;
-      box-sizing: border-box; /* はみ出し防止や計算を楽にする */
-    }
-
-    .calendar-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px;
-      background-color: #f5f5f5;
-      border-bottom: 1px solid #ddd;
-    }
-
-    .calendar-title {
-      font-size: 1.2rem;
-      font-weight: bold;
-    }
-
-    .calendar-nav button {
-      background-color: transparent;
-      border: none;
-      font-size: 1rem;
-      cursor: pointer;
-      padding: 5px 10px;
-    }
-
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      width: 100%;
-      /* 必要に応じて横スクロールを許可する場合は↓を追加:
-         overflow-x: auto; 
-      */
-    }
-
-    .calendar-day-header {
-      font-weight: bold;
-      padding: 8px 2px;
-      background-color: #f0f0f0;
-      font-size: 0.9rem;
-    }
-
-    .calendar-day {
-      padding: 8px 2px;
-      text-align: center;
-      cursor: pointer;
-      border: 1px solid #eee;
-      font-size: 0.9rem;
-      box-sizing: border-box;
-    }
-
-    .calendar-day.selected {
-      background-color: #e6f7ff;
-      border: 1px solid #1890ff;
-      color: #1890ff;
-      font-weight: bold;
-    }
-
-    .calendar-day.other-month {
-      color: #ccc;
-      background-color: #f9f9f9;
-    }
-
-    #selected-dates {
-      margin: 15px auto;
-      font-size: 0.9rem;
-      padding: 10px;
-      background-color: #f5f5f5;
-      border-radius: 4px;
-      max-width: 100%;
-      overflow-wrap: break-word;
-      box-sizing: border-box;
-    }
-
-    /* ------------------------------
-       レスポンシブデザイン
-       ------------------------------ */
-
-    /* 幅が 480px 以下の極端に狭い端末用 */
-    @media (max-width: 480px) {
-      .calendar-day,
-      .calendar-day-header {
-        padding: 6px 0;
-        font-size: 0.75rem; /* さらに少し小さめに */
-      }
-
-      .calendar-title {
-        font-size: 1rem;
-      }
-
-      .calendar-nav button {
-        font-size: 0.9rem;
-      }
-    }
-
-    /* 幅が 768px 以上の場合 */
-    @media (min-width: 768px) {
-      /* もしPC表示時に最大幅を制限したければここで指定 */
-      .calendar-container {
-        max-width: 600px; /* PCなら最大600pxなどに */
-      }
-      .calendar-day {
-        padding: 12px;
-        font-size: 1rem;
-      }
-    }
-  </style>
-</head>
-<body>
-  <h2>シフト希望日を選択</h2>
-
-  <div class="calendar-container">
-    <div class="calendar-header">
-      <div class="calendar-nav">
-        <button id="prev-month">◀</button>
-      </div>
-      <div class="calendar-title" id="calendar-title"></div>
-      <div class="calendar-nav">
-        <button id="next-month">▶</button>
-      </div>
-    </div>
-    <div class="calendar-grid" id="calendar-grid"></div>
+<div class="calendar-container">
+  <div class="calendar-header">
+    <button id="prevMonth">◀</button>
+    <div id="calendarTitle"></div>
+    <button id="nextMonth">▶</button>
   </div>
+  <div class="calendar-grid" id="calendarGrid"></div>
+</div>
 
-  <div id="selected-dates">
-    選択した日付: <span id="date-list">なし</span>
-  </div>
+<p>選択した日付: <span id="selectedDatesText">なし</span></p>
 
-  <script>
-    class Calendar {
-      constructor() {
-        this.selectedDates = [];
-        this.currentDate = new Date();
+<!-- JotFormの隠しフィールドを同じDOMに置く -->
+<input type="hidden" name="q19_calendardata" data-type="control_textbox" />
 
-        this.calendarGrid = document.getElementById('calendar-grid');
-        this.calendarTitle = document.getElementById('calendar-title');
-        this.prevButton = document.getElementById('prev-month');
-        this.nextButton = document.getElementById('next-month');
-        this.dateList = document.getElementById('date-list');
+<script>
+(function(){
+  let selectedDates = [];
+  let currentDate = new Date();
+  const calendarGrid = document.getElementById('calendarGrid');
+  const calendarTitle = document.getElementById('calendarTitle');
+  const selectedDatesText = document.getElementById('selectedDatesText');
+  const hiddenInput = document.querySelector('input[name="q4_calendardata"]');
 
-        this.prevButton.addEventListener('click', () => this.prevMonth());
-        this.nextButton.addEventListener('click', () => this.nextMonth());
+  function renderCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    calendarTitle.textContent = `${year}年${month+1}月`;
+    calendarGrid.innerHTML = '';
 
-        this.renderCalendar();
+    // 曜日ヘッダー
+    const weekdays = ['日','月','火','水','木','金','土'];
+    weekdays.forEach(day => {
+      const el = document.createElement('div');
+      el.className = 'calendar-day-header';
+      el.textContent = day;
+      calendarGrid.appendChild(el);
+    });
 
-        // JotFormのDOM監視
-        document.addEventListener('change', () => {
-          this.updateHiddenField();
-        });
-      }
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month+1, 0);
+    const startDay = firstDay.getDay();
+    const totalDays = lastDay.getDate();
 
-      renderCalendar() {
-        const year = this.currentDate.getFullYear();
-        const month = this.currentDate.getMonth();
-        this.calendarTitle.textContent = `${year}年${month + 1}月`;
+    // 前月日数
+    const prevLastDay = new Date(year, month, 0).getDate();
 
-        this.calendarGrid.innerHTML = '';
-
-        const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-        weekdays.forEach(day => {
-          const dayHeader = document.createElement('div');
-          dayHeader.className = 'calendar-day-header';
-          dayHeader.textContent = day;
-          this.calendarGrid.appendChild(dayHeader);
-        });
-
-        const firstDay = new Date(year, month, 1);
-        const startingDay = firstDay.getDay();
-        const lastDay = new Date(year, month + 1, 0);
-        const totalDays = lastDay.getDate();
-
-        const prevMonthLastDay = new Date(year, month, 0).getDate();
-
-        // 前月部分
-        for (let i = 0; i < startingDay; i++) {
-          const day = prevMonthLastDay - startingDay + i + 1;
-          const prevMonthDate = new Date(year, month - 1, day);
-          this.createDayElement(day, prevMonthDate, true);
-        }
-
-        // 当月部分
-        for (let i = 1; i <= totalDays; i++) {
-          const currentMonthDate = new Date(year, month, i);
-          this.createDayElement(i, currentMonthDate, false);
-        }
-
-        // 次月部分（6行 = 42セルに合わせる）
-        const totalCells = 42;
-        const usedCells = startingDay + totalDays;
-        const remainingCells = totalCells - usedCells;
-        for (let i = 1; i <= remainingCells; i++) {
-          const nextMonthDate = new Date(year, month + 1, i);
-          this.createDayElement(i, nextMonthDate, true);
-        }
-      }
-
-      createDayElement(day, dateObj, isOtherMonth) {
-        const dayElement = document.createElement('div');
-        dayElement.className = 'calendar-day';
-
-        if (isOtherMonth) {
-          dayElement.classList.add('other-month');
-        }
-
-        dayElement.textContent = day;
-        const dateStr = this.formatDate(dateObj);
-        dayElement.dataset.date = dateStr;
-
-        if (this.selectedDates.includes(dateStr)) {
-          dayElement.classList.add('selected');
-        }
-
-        dayElement.addEventListener('click', () => {
-          if (!isOtherMonth) {
-            this.toggleDateSelection(dateStr, dayElement);
-          }
-        });
-
-        this.calendarGrid.appendChild(dayElement);
-      }
-
-      toggleDateSelection(dateStr, element) {
-        const idx = this.selectedDates.indexOf(dateStr);
-        if (idx === -1) {
-          this.selectedDates.push(dateStr);
-          element.classList.add('selected');
-        } else {
-          this.selectedDates.splice(idx, 1);
-          element.classList.remove('selected');
-        }
-        this.updateSelectedDatesList();
-        this.updateHiddenField();
-      }
-
-      updateSelectedDatesList() {
-        if (this.selectedDates.length === 0) {
-          this.dateList.textContent = 'なし';
-        } else {
-          const displayDates = this.selectedDates.map(str => {
-            const [yyyy, mm, dd] = str.split('-');
-            return `${parseInt(mm)}/${parseInt(dd)}`;
-          });
-          this.dateList.textContent = displayDates.join(', ');
-        }
-      }
-
-      updateHiddenField() {
-        this.selectedDates.sort(); 
-        const datesString = this.selectedDates.join(',');
-
-        try {
-          const hiddenInput = document.querySelector(
-            'input[name^="q"][type="hidden"][data-type="control_hidden"]'
-          );
-          if (hiddenInput) {
-            hiddenInput.value = datesString;
-            const event = new Event('change', { bubbles: true });
-            hiddenInput.dispatchEvent(event);
-          } else {
-            console.warn('JotFormの非表示フィールドが見つかりません。');
-          }
-        } catch (e) {
-          console.error('非表示フィールドの更新中にエラー:', e);
-        }
-      }
-
-      prevMonth() {
-        this.currentDate.setMonth(this.currentDate.getMonth() - 1);
-        this.renderCalendar();
-      }
-
-      nextMonth() {
-        this.currentDate.setMonth(this.currentDate.getMonth() + 1);
-        this.renderCalendar();
-      }
-
-      formatDate(d) {
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${y}-${m}-${day}`;
-      }
+    // 前月の余白
+    for(let i=0; i<startDay; i++){
+      const dateNum = prevLastDay - startDay + i + 1;
+      createDayElement(dateNum, new Date(year, month-1, dateNum), true);
     }
 
-    // 画面読み込み後に初期化
-    setTimeout(() => {
-      new Calendar();
-    }, 500);
-  </script>
-</body>
-</html>
+    // 今月
+    for(let d=1; d<=totalDays; d++){
+      createDayElement(d, new Date(year, month, d), false);
+    }
+
+    // 次月の余白
+    const totalCells = 42; // 6行×7列
+    const usedCells = startDay + totalDays;
+    const remain = totalCells - usedCells;
+    for(let i=1; i<=remain; i++){
+      createDayElement(i, new Date(year, month+1, i), true);
+    }
+  }
+
+  function createDayElement(dayNum, dateObj, isOtherMonth){
+    const el = document.createElement('div');
+    el.className = 'calendar-day';
+    if(isOtherMonth){
+      el.style.color = '#ccc';
+    }
+    el.textContent = dayNum;
+
+    const dateStr = formatDate(dateObj);
+    if(selectedDates.includes(dateStr)){
+      el.classList.add('selected');
+    }
+
+    el.addEventListener('click', () => {
+      if(!isOtherMonth){
+        toggleDate(dateStr, el);
+      }
+    });
+    calendarGrid.appendChild(el);
+  }
+
+  function toggleDate(dateStr, el){
+    const idx = selectedDates.indexOf(dateStr);
+    if(idx === -1){
+      selectedDates.push(dateStr);
+      el.classList.add('selected');
+    } else {
+      selectedDates.splice(idx, 1);
+      el.classList.remove('selected');
+    }
+    updateSelectedDates();
+  }
+
+  function updateSelectedDates(){
+    if(selectedDates.length === 0){
+      selectedDatesText.textContent = 'なし';
+    } else {
+      selectedDatesText.textContent = selectedDates.join(', ');
+    }
+    // 隠しフィールドに書き込み
+    if(hiddenInput){
+      hiddenInput.value = selectedDates.join(',');
+      // 変更をJotFormに通知
+      const event = new Event('change', { bubbles: true });
+      hiddenInput.dispatchEvent(event);
+    }
+  }
+
+  function formatDate(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${dd}`;
+  }
+
+  document.getElementById('prevMonth').addEventListener('click', ()=>{
+    currentDate.setMonth(currentDate.getMonth()-1);
+    renderCalendar();
+  });
+  document.getElementById('nextMonth').addEventListener('click', ()=>{
+    currentDate.setMonth(currentDate.getMonth()+1);
+    renderCalendar();
+  });
+
+  renderCalendar();
+})();
+</script>
